@@ -32,7 +32,6 @@ _refresh_wrappers() {
     log_status "Recreating wrappers in $WRAPPERS"
     mkdir -p $WRAPPERS
     for cmd in "${CONTAINER_WRAPPERS[@]}"; do
-        echo "cmd='$cmd'"
         container_wrap $cmd
     done
     container_wrap bash shell
