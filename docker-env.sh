@@ -6,6 +6,8 @@ container_setup() {
     : "${WRAPPERS:=$PWD/$WRAPPERS_DIRNAME}"
     : "${CONTAINER_ARGS:=--rm -it -P}"
     : "${CONTAINER_EXTRA_ARGS:=-v $PWD:$PWD -w $PWD}"
+    : "${CONTAINER_EXE:=`which docker`}"
+    : "${CONTAINER_CMDLINE_PREFIX:=${CONTAINER_EXE} run ${CONTAINER_ARGS} ${CONTAINER_EXTRA_ARGS} }"
 
     # I can't use array on default initialization
     if [ -z "${CONTAINER_WRAPPERS}" ]; then
@@ -15,13 +17,15 @@ container_setup() {
 
 _container_cmd() {
     local cmd=$1
-    local cmd_extra_cfg="${CONTAINER_EXTRA_ARGS}"
 
-    if declare -F container_arguments > /dev/null; then
-        cmd_extra_cfg=`container_arguments ${cmd}`
+    if declare -F container_cmd > /dev/null; then
+        cmd_line=$(container_cmd ${cmd})
     fi
 
-    echo "docker run $CONTAINER_ARGS --entrypoint=${cmd} ${cmd_extra_cfg} ${CONTAINER_NAME} \$*"
+    if [ -z "${cmd_line}" ]; then
+        cmd_line="${CONTAINER_CMDLINE_PREFIX} --entrypoint=${cmd} ${CONTAINER_NAME} \$*"
+    fi
+    echo -e "${cmd_line}"
 }
 
 _container_run() {
