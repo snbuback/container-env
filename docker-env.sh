@@ -1,13 +1,32 @@
+VERSION=1.0-2018-10-26-22-00
+
+container_layout() {
+    local cmd
+
+    _container_init
+
+    # refreshing wrappers if required
+    if [ "`cat $WRAPPERS/.initialized 2>&1`" != "$VERSION" ]; then
+        _container_refresh_wrappers
+        [ $CONTAINER_AUTO_WRAPPER -eq 1 ] && _container_auto_wrappers
+        _wrapper_in_git_ignore
+
+        echo -n "$VERSION" > $WRAPPERS/.initialized
+    fi
+    PATH_add $WRAPPERS
+}
 
 # setup default values
-container_setup() {
+_container_init() {
 
+    : "${CONTAINER_PROJECT_DIR:=$PWD}"
     : "${WRAPPERS_DIRNAME:=.wrappers}"
-    : "${WRAPPERS:=$PWD/$WRAPPERS_DIRNAME}"
+    : "${WRAPPERS:=$CONTAINER_PROJECT_DIR/$WRAPPERS_DIRNAME}"
     : "${CONTAINER_ARGS:=--rm -it -P}"
-    : "${CONTAINER_EXTRA_ARGS:=-v $PWD:$PWD -w $PWD}"
+    : "${CONTAINER_EXTRA_ARGS:=-v $CONTAINER_PROJECT_DIR:$CONTAINER_PROJECT_DIR -w $CONTAINER_PROJECT_DIR}"
     : "${CONTAINER_EXE:=`which docker`}"
     : "${CONTAINER_CMDLINE_PREFIX:=${CONTAINER_EXE} run ${CONTAINER_ARGS} ${CONTAINER_EXTRA_ARGS} }"
+    : "${CONTAINER_AUTO_WRAPPER:=1}"
 
     # I can't use array on default initialization
     if [ -z "${CONTAINER_WRAPPERS}" ]; then
@@ -15,47 +34,86 @@ container_setup() {
     fi
 }
 
+_container_refresh_wrappers() {
+    log_status "Recreating wrappers in $WRAPPERS"
+    mkdir -p $WRAPPERS
+    for cmd in "${CONTAINER_WRAPPERS[@]}"; do
+        _container_wrap $cmd
+    done
+}
+
+_container_auto_wrappers() {
+    # auto wrappers doesn't use _container_cmd
+    (
+        container_cmd() {
+            case "$1" in
+                shell)
+                    _default_cmd_line bash
+                    ;;
+                build)
+                    echo "docker build -t $CONTAINER_NAME ."
+                    ;;
+                up)
+                    echo "docker-compose up"
+                    ;;
+                down)
+                    echo "docker-compose down"
+                    ;;
+                *)
+                    exit 1
+            esac
+        }
+        _container_wrap shell
+        [ -f Dockerfile ] && _container_wrap build
+        [ -f docker-compose.yml ] && _container_wrap up ; _container_wrap down
+    )
+}
+
+_container_wrap() {
+    local script_name=$1
+    local wrapper_script=$WRAPPERS/${script_name}
+    local script_content
+
+    shift
+    if [ $# -gt 0 ]; then
+        script_content="$*"
+    else
+        # uses _container_cmd to fetch the script customization
+        script_content=`_container_cmd $script_name`
+    fi
+    log_status "Wrapping $script_name on $wrapper_script"
+
+    cat > $wrapper_script <<-EOF
+#!/bin/bash
+CONTAINER_PROJECT_DIR=$CONTAINER_PROJECT_DIR
+
+$script_content
+
+exit \$?
+EOF
+    chmod +x $wrapper_script
+}
+
 _container_cmd() {
     local cmd=$1
 
+    # if there is a customization, use it's value.
+    # the customization function is called in another process to avoid mess
+    # with the current script
     if declare -F container_cmd > /dev/null; then
         cmd_line=$(container_cmd ${cmd})
+        [ $? -eq 0 ] || cmd_line=""
     fi
 
     if [ -z "${cmd_line}" ]; then
-        cmd_line="${CONTAINER_CMDLINE_PREFIX} --entrypoint=${cmd} ${CONTAINER_NAME} \$*"
+        cmd_line="`_default_cmd_line $cmd`"
     fi
     echo -e "${cmd_line}"
 }
 
-_container_run() {
-    `container_cmd $*`
-}
-
-_refresh_wrappers() {
-    log_status "Recreating wrappers in $WRAPPERS"
-    mkdir -p $WRAPPERS
-    for cmd in "${CONTAINER_WRAPPERS[@]}"; do
-        container_wrap $cmd
-    done
-    container_wrap bash shell
-    _wrapper_in_git_ignore
-}
-
-container_wrap() {
+_default_cmd_line() {
     local cmd=$1
-    local wrapper_script=$WRAPPERS/${2-$cmd}
-    local docker_cmd=`_container_cmd $cmd`
-    log_status "Wrapping $cmd on $wrapper_script"
-
-    (cat <<-EOF
-#!/bin/bash
-$docker_cmd
-exit $?
-EOF
-    ) > $wrapper_script
-    chmod +x $wrapper_script
-
+    echo "${CONTAINER_CMDLINE_PREFIX} ${CONTAINER_NAME} ${cmd} \$*"
 }
 
 _wrapper_in_git_ignore() {
@@ -64,19 +122,3 @@ _wrapper_in_git_ignore() {
         echo -e "\n# Container wrappers\n$WRAPPERS_DIRNAME\n" >> .gitignore
     fi   
 }
-
-container_layout() {
-    local cmd
-
-    container_setup
-
-    # refreshing wrappers if required
-    if [ ! -f $WRAPPERS/.initialized ]; then
-        _refresh_wrappers
-        touch $WRAPPERS/.initialized
-    fi
-
-    PATH_add $WRAPPERS
-
-}
-
