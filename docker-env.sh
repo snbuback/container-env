@@ -4,8 +4,8 @@ container_setup() {
 
     : "${WRAPPERS_DIRNAME:=.wrappers}"
     : "${WRAPPERS:=$PWD/$WRAPPERS_DIRNAME}"
-    : "${CONTAINER_ARGS:=--rm -it -P}"
-    : "${CONTAINER_EXTRA_ARGS:=-v $PWD:$PWD -w $PWD}"
+    : "${CONTAINER_ARGS:=--rm -it -P -v $PWD:$PWD -w $PWD}"
+    : "${CONTAINER_EXTRA_ARGS:=}"
     : "${CONTAINER_EXE:=`which docker`}"
     : "${CONTAINER_CMDLINE_PREFIX:=${CONTAINER_EXE} run ${CONTAINER_ARGS} ${CONTAINER_EXTRA_ARGS} }"
 
