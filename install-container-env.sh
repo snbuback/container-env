@@ -12,7 +12,7 @@ DIRENV_DIR=${XDG_CONFIG_HOME}/direnv
 DIRENV_RC=${DIRENV_DIR}/direnvrc
 
 mkdir -p "${DIRENV_DIR}"
-if ! grep 'container-env' "${DIRENV_RC}" > /dev/null; then
+if ! (grep 'container-env' "${DIRENV_RC}" &> /dev/null); then
     echo "Adding container-env to ${DIRENV_RC}"
     cat >> "${DIRENV_RC}" <<EOF
 
@@ -22,7 +22,7 @@ for SCRIPT in ${CONTAINERENV_DIR}/src/*; do
 done
 EOF
 
-    echo "Installed. Don't forget to load DirEnv in your shell environment."
+    echo "Container-env Installed. Don't forget to load DirEnv in your shell environment."
 else
     echo "Already installed."
 fi
