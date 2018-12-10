@@ -4,8 +4,8 @@
 # Fetch container-env from repository and install its dependencies.
 set -e
 
-REPOSITORY=https://github.com/snbuback/container-env
-BRANCH=master
+REPOSITORY=${REPOSITORY:-"https://github.com/snbuback/container-env"}
+BRANCH=${BRANCH:-"master"}
 INSTALL_PATH=${HOME}/.container-env
 SUDO=$(command -v sudo || true)
 
