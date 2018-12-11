@@ -1,0 +1,3 @@
+pylama==7.6.6
+eradicate==0.2.1
+ipython

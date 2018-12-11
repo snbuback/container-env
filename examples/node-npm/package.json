@@ -1,0 +1,11 @@
+{
+  "name": "container-env-demo",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "11.x"
+  },
+  "dependencies": {
+    "eslint": "^5.10.0"
+  }
+}

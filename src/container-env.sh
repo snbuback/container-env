@@ -6,14 +6,28 @@ container_layout() {
     _container_init
 
     # refreshing wrappers if required
-    if [[ "$(cat \""${WRAPPERS}"/.initialized\" 2>&1)" != "${VERSION}" ]]; then
+    local current_checksum=$(_container_wrapper_checksum)
+    
+    if [[ $(cat "${WRAPPERS}"/.initialized 2>&1) != "${current_checksum}" ]]; then
         _container_refresh_wrappers
         [[ "${CONTAINER_AUTO_WRAPPER}" -eq 1 ]] && _container_auto_wrappers
         _wrapper_in_git_ignore
 
-        echo -n "${VERSION}" > "${WRAPPERS}/.initialized"
+        echo -n "${current_checksum}" > "${WRAPPERS}/.initialized"
     fi
     PATH_add "${WRAPPERS}"
+}
+
+_container_wrapper_checksum() {
+    echo "${VERSION}"
+    # try to hash the .envrc. In case of changes, rewrites the .wrapper scripts
+    if command -v md5 > /dev/null; then
+        md5 .envrc
+    elif command -v md5sum > /dev/null; then
+        md5sum .envrc
+    elif command -v shasum > /dev/null; then
+        shasum .envrc
+    fi
 }
 
 # setup default values
@@ -22,14 +36,15 @@ _container_init() {
     : "${CONTAINER_PROJECT_DIR:=$PWD}"
     : "${WRAPPERS_DIRNAME:=.wrappers}"
     : "${WRAPPERS:=$CONTAINER_PROJECT_DIR/$WRAPPERS_DIRNAME}"
-    : "${CONTAINER_ARGS:=--rm -i -P -v \$CONTAINER_PROJECT_DIR:\$CONTAINER_PROJECT_DIR}"
+    : "${CONTAINER_APP_DIR:=\$CONTAINER_PROJECT_DIR}"
+    : "${CONTAINER_ARGS:=--rm -i -P -v \$CONTAINER_PROJECT_DIR:\$CONTAINER_APP_DIR}"
     : "${CONTAINER_EXTRA_ARGS:=}"
     : "${CONTAINER_EXE:=$(command -v docker)}"
     : "${CONTAINER_AUTO_WRAPPER:=1}"
 
     # I can't use array on default initialization
     if [[ -z "${CONTAINER_WRAPPERS}" ]]; then
-        CONTAINER_WRAPPERS=(python ruby node)
+        CONTAINER_WRAPPERS=(python ruby node java php)
     fi
 }
 
@@ -86,6 +101,7 @@ _container_wrap() {
     cat > "${wrapper_script}" <<-EOF
 #!/bin/bash
 CONTAINER_PROJECT_DIR="$CONTAINER_PROJECT_DIR"
+CONTAINER_APP_DIR="$CONTAINER_APP_DIR"
 CONTAINER_EXE="$CONTAINER_EXE"
 CONTAINER_ARGS="$CONTAINER_ARGS"
 CONTAINER_EXTRA_ARGS="$CONTAINER_EXTRA_ARGS"
@@ -96,9 +112,9 @@ if [[ -t 1 ]] && [[ -t 0 ]]; then
 fi
 
 if [[ "\$PWD" == "\$CONTAINER_PROJECT_DIR"* ]]; then
-    CONTAINER_ARGS="-w \$PWD \$CONTAINER_ARGS"
+    CONTAINER_ARGS="-w \${CONTAINER_APP_DIR}\${PWD#\$CONTAINER_PROJECT_DIR} \$CONTAINER_ARGS"
 else
-    CONTAINER_ARGS="-w \$CONTAINER_PROJECT_DIR \$CONTAINER_ARGS"
+    CONTAINER_ARGS="-w \$CONTAINER_APP_DIR \$CONTAINER_ARGS"
 fi
 
 $script_content
@@ -115,7 +131,7 @@ _container_cmd() {
     # the customization function is called in another process to avoid mess
     # with the current script
     if declare -F container_cmd > /dev/null; then
-        cmd_line=$(container_cmd "${cmd}") || ""
+        cmd_line=$(container_cmd "${cmd}") || echo ""
     fi
 
     if [[ -z "${cmd_line}" ]]; then
@@ -126,9 +142,9 @@ _container_cmd() {
 
 _default_cmd_line() {
     local cmd=$1
-    echo "CONTAINER_CMD=${cmd}; set -x"
+    echo "CONTAINER_CMD=${cmd}"
     # shellcheck disable=SC2016
-    echo '"$CONTAINER_EXE" run $CONTAINER_ARGS $CONTAINER_EXTRA_ARGS "$CONTAINER_NAME" "$CONTAINER_CMD" "$@"'
+    echo '"$CONTAINER_EXE" run $CONTAINER_ARGS $CONTAINER_EXTRA_ARGS --entrypoint="$CONTAINER_CMD" "$CONTAINER_NAME" "$@"'
 }
 
 _wrapper_in_git_ignore() {
