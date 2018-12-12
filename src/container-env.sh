@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=1.0-2018-12-12-15-00
+VERSION=1.0-2018-12-12-15-30
 
 container_layout() {
     _container_init
@@ -150,7 +150,8 @@ _default_cmd_line() {
 }
 
 _wrapper_in_git_ignore() {
-    if ! grep "${WRAPPERS_DIRNAME}" .gitignore > /dev/null; then
+
+    if ! (echo grep "$WRAPPERS_DIRNAME" .gitignore "$(git config --get core.excludesfile)" | bash - > /dev/null); then
         log_status "Adding ${WRAPPERS_DIRNAME} to .gitignore"
         echo -e "\n# Container wrappers\n${WRAPPERS_DIRNAME}\n" >> .gitignore
     fi   
