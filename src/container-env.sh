@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=1.0-2018-10-26-22-00
+VERSION=1.0-2018-12-12-15-00
 
 container_layout() {
     _container_init
@@ -78,9 +78,11 @@ _container_auto_wrappers() {
             esac
         }
         _container_wrap shell
-        [ -f Dockerfile ] && _container_wrap build
-        [ -f docker-compose.yml ] && _container_wrap up
-        [ -f docker-compose.yml ] && _container_wrap down
+        [[ -f Dockerfile ]] && _container_wrap build
+        if [[ -f docker-compose.yml ]]; then
+            _container_wrap up
+            _container_wrap down
+        fi
     )
 }
 
