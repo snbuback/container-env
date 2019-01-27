@@ -1,12 +1,14 @@
-# Container env
+# Container-env
 
-Container-env is a tool to help you run your development environment in a container transparently. Also, avoids local installation and makes the development environment very portable. Using container-env when you type `python` (or `ruby` or `node`) in your command line you run the tool inside the container. You don't need to worry about Docker command line, mount the project directory etc. Everything will work seamlessly.
+Container-env fills a gap between docker tools. Today, if you would like to run a web server, you can do it easily using docker-compose. But if you want to run an interactive python interpreter for instance, or maybe a linter tool frequently requires a local installation. Container-env works wrapping all command line tools to run inside a Docker container and add them to the PATH. So, the tools will look like a local installation, but they will run inside the container, creating a totally isolated development environment. It is inspired in tools like [virtualenv](https://virtualenv.pypa.io/en/latest/) (for python), [rvm](https://rvm.io) (for ruby) or [nvm](https://github.com/creationix/nvm) (for nodejs) but can rule all of them.
 
-Container-env fills a gap between docker tools. Today, if you would like to run a web server, you can do it easily using docker-compose. But if you want to run the python interpreter for example, or maybe a linter tool, frequently requires a local installation.
+Take a look in the example below. Let's suppose you don't have `go` installed and wants to start the development with it.
 
-This approach makes your IDE compatible with tools running inside docker container because these tools will run as they are installed locally.
+![Image of Yaktocat](demo.gif)
 
-Container-env works wrapping all command line tools to run inside a Docker container and add them to the PATH. So, your command will run like a local command but inside a container.
+So, container-env keeps your development environment clean, since everything will run inside a container. Your linter tool, for example, eslint/pylint/pylama/pyflakes/rubocop will work exactly as a local installation but running inside the container.
+
+To achieve that container-env creates a script wrapper for these tools. So, when you run container-env starts a temporary container, forwarding all arguments to the tool. Also, it mounts the project directory inside the container so the interaction inside the container will look like any local interaction.
 
 ## Install
 
@@ -56,6 +58,7 @@ Bellow few examples for some programming languages.
 * [Python](./examples/python-pip)
 * [Ruby](./examples/ruby)
 * [Node](./examples/node-npm)
+* [Go](./examples/golang)
 
 ## Environment variables
 

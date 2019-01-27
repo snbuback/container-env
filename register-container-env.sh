@@ -1,5 +1,5 @@
 #!/bin/bash
-# install-container-env.sh
+# register-container-env.sh
 # 
 # This script manages the local install.
 #

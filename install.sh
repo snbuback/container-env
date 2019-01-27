@@ -73,7 +73,7 @@ download_repo() {
 
 local_install() {
     cd "${INSTALL_PATH}"
-    ./install-container-env.sh
+    ./register-container-env.sh
 }
 
 ensure_command git git

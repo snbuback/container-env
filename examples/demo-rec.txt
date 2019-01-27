@@ -1,0 +1,50 @@
+rm -rf rec.cast ~/demo
+(cd ~; asciinema rec /Users/snbuback/Projects/container-env/rec.cast -c 'zsh -l' -i 1.5)
+docker run --rm -v $PWD:/data asciinema/asciicast2gif rec.cast demo.gif
+
+====== Script ======
+mkdir demo
+cd demo
+cat > hello-word.go
+// based on https://gobyexample.com/hello-world
+package main
+import "fmt"
+func main() {
+    fmt.Println("hello world")
+}
+------------
+
+echo No go installed
+go build
+
+echo Configuring container-env. Just one file: .envrc
+cat > .envrc
+
+CONTAINER_NAME=golang:latest
+CONTAINER_WRAPPERS=(go)
+
+container_layout
+------------
+
+direnv allow
+echo Now go command exist and is a wrapper to call go inside the docker container
+
+go run hello-word.go
+
+command -v go
+
+uname -s
+echo Its a mac but go report as linux since runs in a linux container
+go version
+
+echo No more go outside project directory
+cd /
+go
+
+echo Go will working again
+cd ~/demo
+go run hello-word.go
+
+echo "***** Works in any programming language that supports dockers ****"
+
+=====================

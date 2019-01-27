@@ -151,7 +151,7 @@ _default_cmd_line() {
 
 _wrapper_in_git_ignore() {
 
-    if ! (echo grep "$WRAPPERS_DIRNAME" .gitignore "$(git config --get core.excludesfile)" | bash - > /dev/null); then
+    if ! (echo grep "$WRAPPERS_DIRNAME" .gitignore "$(git config --get core.excludesfile)" 2> /dev/null | bash - > /dev/null); then
         log_status "Adding ${WRAPPERS_DIRNAME} to .gitignore"
         echo -e "\n# Container wrappers\n${WRAPPERS_DIRNAME}\n" >> .gitignore
     fi   
