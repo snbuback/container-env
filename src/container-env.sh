@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=1.0-2018-12-12-15-30
+VERSION=1.0-2020-26-05-21-30
 
 container_layout() {
     _container_init
@@ -87,7 +87,8 @@ _container_auto_wrappers() {
 }
 
 _container_wrap() {
-    local script_name=$1
+    local script_path=$1
+    local script_name=$(basename "${script_path}")
     local wrapper_script=$WRAPPERS/${script_name}
     local script_content
 
@@ -96,9 +97,9 @@ _container_wrap() {
         script_content="$*"
     else
         # uses _container_cmd to fetch the script customization
-        script_content="$(_container_cmd "${script_name}")"
+        script_content="$(_container_cmd "${script_path}")"
     fi
-    log_status "Wrapping ${script_name} on ${wrapper_script}"
+    log_status "Wrapping ${script_path} on ${wrapper_script}"
 
     cat > "${wrapper_script}" <<-EOF
 #!/bin/bash
